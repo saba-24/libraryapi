@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using LibraryApi.Data.ApiResponse;
+using LibraryApi.Data.Db;
 using LibraryApi.Data.Dto;
 using LibraryApi.Data.Entities;
 using LibraryApi.Repository;
@@ -8,7 +9,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace LibraryApi.Services.Implementations;
 
-public class CopyService(IRepository<BookCopy> repository, IMapper mapper) : ICopyService
+public class CopyService(IRepository<BookCopy> repository, AppDbContext context, IMapper mapper) : ICopyService
 {
     public async Task AddAsync(CopyDto copy)
     {
@@ -32,25 +33,41 @@ public class CopyService(IRepository<BookCopy> repository, IMapper mapper) : ICo
 
     public async Task DeleteAsync(string id)
     {
-        await repository.DeleteAsync(mapper.Map<BookCopy>(id));
+        BookCopy book = await repository.GetByIdAsync(id);
+        await repository.DeleteAsync(book);
     }
 
     public async Task UpdateBorrowerAsync(string user, string copy)
     {
         BookCopy book = await repository.GetByIdAsync(copy);
-        if (book.IsBorrowed) throw new Exception("Book is already borrowed");
-        book.IsBorrowed = true;
-        book.Borrower = user;
-        await repository.SaveAsync();
+        User u = await context.Users.FirstOrDefaultAsync(u => u.Id == user);
+        if(book.IsBorrowed) throw new Exception("Book is already borrowed");
+        if(u is null) throw new Exception("User not found");
+        BookCopy newBook = new(book.ISBN)
+        {
+            Id = book.Id,
+            Borrower = user,
+            IsBorrowed = true,
+            CreatedAt = book.CreatedAt
+        };
+        u.BorrowedBooks.Add(book.ISBN);
+        await repository.UpdateAsync(book.Id, newBook);
     }
 
     public async Task ReturnBookAsync(string id)
     {
         BookCopy book = await repository.GetByIdAsync(id);
-        if (!book.IsBorrowed) throw new Exception("Book isn't borrowed");
-        book.IsBorrowed = false;
-        book.Borrower = null;
-        await repository.SaveAsync();
+        User u = await context.Users.FirstOrDefaultAsync(u => u.Id == book.Borrower);
+        if(!book.IsBorrowed) throw new Exception("Book is not borrowed");
+        BookCopy newBook = new(book.ISBN)
+        {
+            Id = book.Id,
+            Borrower = null,
+            IsBorrowed = false,
+            CreatedAt = book.CreatedAt
+        };
+        u.BorrowedBooks.Remove(book.ISBN);
+        await repository.UpdateAsync(book.Id, newBook);
     }
 
     public async Task<bool> ExistsAsync(string id)

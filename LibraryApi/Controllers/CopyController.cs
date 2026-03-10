@@ -90,7 +90,6 @@ public class CopyController(ICopyService copyService, IUserService userService) 
                     ApiResponse.Fail("user cannot borrow any more books since they reached the borrow limit", null));
             if (u.BorrowedBooks.Contains(copy.ISBN))
                 return BadRequest(ApiResponse.Fail("user already borrowed this book", null));
-            await userService.BorrowAsync(copy.ISBN, userId);
             await copyService.UpdateBorrowerAsync(userId, copyId);
             return Ok(ApiResponse.Success("borrowed book", null));
         }
@@ -111,7 +110,6 @@ public class CopyController(ICopyService copyService, IUserService userService) 
             BookCopy copy = await copyService.GetByIdAsync(copyId);
             if (!u.BorrowedBooks.Contains(copy.ISBN))
                 return BadRequest(ApiResponse.Fail("user has not borrowed this book", null));
-            await userService.ReturnAsync(copy.ISBN, userId);
             await copyService.ReturnBookAsync(copyId);
             return Ok(ApiResponse.Success("returned book", null));
         }

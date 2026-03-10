@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using LibraryApi.Data.ApiResponse;
+using LibraryApi.Data.Db;
 using LibraryApi.Data.Dto;
 using LibraryApi.Data.Entities;
 using LibraryApi.Repository;
@@ -8,7 +9,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace LibraryApi.Services.Implementations;
 
-public class BookService(IRepository<Book> repository, IMapper mapper) : IBookService
+public class BookService(IRepository<Book> repository, AppDbContext context, IMapper mapper) : IBookService
 {
     public async Task AddAsync(BookDto book)
     {
