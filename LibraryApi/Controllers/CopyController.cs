@@ -78,22 +78,6 @@ public class CopyController(ICopyService copyService, IUserService userService) 
 
     [HttpPut]
     [Authorize]
-    [Route("{id}")]
-    public async Task<IActionResult> UpdateAsync([FromBody] CopyDto copy, [FromRoute] string id)
-    {
-        try
-        {
-            await copyService.UpdateAsync(id, copy);
-            return Ok(ApiResponse.Success("updated book", await copyService.GetByIdAsync(id)));
-        }
-        catch (Exception e)
-        {
-            return BadRequest(ApiResponse.Fail("server error", e.GetType().ToString()));
-        }
-    }
-
-    [HttpPut]
-    [Authorize]
     [Route("borrow")]
     public async Task<IActionResult> UpdateBorrowerAsync([FromQuery] string userId, [FromQuery] string copyId)
     {

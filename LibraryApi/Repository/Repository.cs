@@ -30,11 +30,12 @@ public class Repository<T>(AppDbContext context) : IRepository<T> where T : Base
 
     public async Task UpdateAsync(string id, T entity)
     {
-        if (context.Set<T>().Any(s => s.Id == id))
+        entity.Id = id;
+        var existingEntity = await context.Set<T>().FindAsync(id);
+        if (existingEntity != null)
         {
-            var t = await context.Set<T>().FirstAsync(s => s.Id == id);
-            t = entity;
-            context.SaveChanges();
+            context.Entry(existingEntity).CurrentValues.SetValues(entity);
+            await context.SaveChangesAsync();
         }
     }
 
